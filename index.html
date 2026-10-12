@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>MISI NOMBOR ARAB — KELAS 1 GAMMA (HD-2D)</title>
+
+  <!-- Google Fonts: Noto Naskh Arabic, Nunito & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@500;700;800;900&family=Nunito:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- Three.js CDN r128 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Fail Penggayaan Utama -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- WebGL 3D Canvas -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Amaran Mod Landskap untuk Telefon & Tablet -->
+  <div id="landscape-warning-overlay">
+    <div class="landscape-phone-animation">
+      <div class="phone-icon-box">📱</div>
+      <div class="rotate-arrow-badge">🔄</div>
+    </div>
+    <h2 class="landscape-warning-title">Sila Putarkan Telefon Anda</h2>
+    <p class="landscape-warning-desc">
+      Permainan <strong>Misi Nombor Arab</strong> perlu dimainkan dalam <strong>Mod Melintang (Landscape)</strong> untuk paparan peta sekolah dan kawalan terbaik.
+    </p>
+    <div class="landscape-hint-pill">
+      Putarkan telefon anda ke mod Landskap ➔
+    </div>
+  </div>
+
+  <!-- Top HUD (Bar Maklumat Atas) -->
+  <div id="top-hud">
+    <div class="hud-card hud-title-badge">
+      <div class="badge-icon">🏫</div>
+      <div>
+        <div class="badge-text-title">Misi Nombor Arab • 1 Gamma</div>
+        <div class="badge-location-name" id="hud-location-name">Kelas 1 Gamma</div>
+      </div>
+    </div>
+
+    <!-- Penjejak Kemajuan Kuiz & Modul -->
+    <div class="hud-card quest-tracker">
+      <div class="quest-pill" id="hud-student-pill">🎒 Murid</div>
+      <div class="quest-pill" id="quest-badge-learning">📖 Belajar ⏳</div>
+      <div class="quest-pill" id="quest-badge-canteen">🥟 Kantin ⏳</div>
+      <div class="quest-pill" id="quest-badge-field">⚽ Padang ⏳</div>
+      <div class="quest-pill" id="quest-badge-exam">📝 Ujian ⏳</div>
+    </div>
+
+    <!-- Butang Tindakan Kanan HUD -->
+    <div class="hud-controls-group">
+      <button class="hud-btn" id="btn-toggle-sound" title="Kesan Bunyi">🔊 Bunyi</button>
+      <button class="hud-btn victory-btn" id="btn-hud-victory" style="display:none;" title="Lihat Sijil Kejayaan">🏆 Tamat</button>
+    </div>
+  </div>
+
+  <!-- Debug Panel F2 -->
+  <div id="debug-panel">
+    <div><strong>[F2] MOD DEBUG ANTIGRAVITY</strong></div>
+    <div>Bilik: <span id="dbg-room">classroom</span></div>
+    <div>Pemain: <span id="dbg-pos">0.00, 0.00, 0.00</span></div>
+    <div>Arah: <span id="dbg-facing">down</span></div>
+    <div>Jantina: <span id="dbg-gender">Lelaki</span></div>
+    <div>FPS: <span id="dbg-fps">60</span></div>
+  </div>
+
+  <!-- Penunjuk Terapung Interaksi 2.5D -->
+  <div id="floating-indicator">
+    <span class="float-key">E / Sentuh</span>
+    <span id="floating-indicator-text">Bercakap dengan Ustaz Alif</span>
+  </div>
+
+  <!-- Tirai Hitam Peralihan Bilik (Fade Warp) -->
+  <div id="warp-curtain"></div>
+
+  <!-- Mesej Toast Notifikasi -->
+  <div id="toast-msg"></div>
+
+  <!-- Kawalan Sentuh Maya untuk Telefon & Tablet -->
+  <div id="touch-controls">
+    <div class="dpad-container">
+      <button class="dpad-btn dpad-up" id="btn-up">▲</button>
+      <button class="dpad-btn dpad-down" id="btn-down">▼</button>
+      <button class="dpad-btn dpad-left" id="btn-left">◀</button>
+      <button class="dpad-btn dpad-right" id="btn-right">▶</button>
+      <div class="dpad-center"></div>
+    </div>
+    <div class="action-btn-container">
+      <button class="touch-action-btn" id="btn-touch-action">
+        <span style="font-size:18px;">E</span>
+        <span style="font-size:10px; font-weight:800; color:#fef08a;">SENTUH</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Skrin Pemilihan Karakter & Nama Murid (Permulaan) -->
+  <div class="character-select-overlay" id="intro-modal">
+    <div class="intro-card">
+      <div class="intro-badge">KELAS 1 GAMMA</div>
+      <h1 class="intro-title">MISI NOMBOR ARAB</h1>
+      <p class="intro-subtitle">Pengembaraan Bahasa Arab Tahun 1</p>
+
+      <div class="greeting-card-box">
+        👋 Assalamualaikum! Sila pilih watak kamu dan masukkan nama untuk memulakan pengembaraan nombor Arab di Sekolah Rendah 1 Gamma:
+      </div>
+
+      <!-- Bahagian Pilihan Karakter (Lelaki / Perempuan Bertudung Putih) -->
+      <div class="char-select-section">
+        <label class="char-select-label">Pilih Jantina & Watak Murid:</label>
+        <div class="gender-options-grid">
+          <!-- Karakter Murid Lelaki -->
+          <div class="gender-card active" id="card-gender-male">
+            <canvas class="gender-preview-canvas" id="canvas-preview-male" width="48" height="48"></canvas>
+            <div class="gender-card-title">👦 Murid Lelaki</div>
+          </div>
+
+          <!-- Karakter Murid Perempuan (Bertudung Putih Kemas) -->
+          <div class="gender-card" id="card-gender-female">
+            <canvas class="gender-preview-canvas" id="canvas-preview-female" width="48" height="48"></canvas>
+            <div class="gender-card-title">👧 Murid Perempuan</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Nama Murid -->
+      <div class="input-group">
+        <label class="input-label" for="input-student-name">Nama Murid:</label>
+        <input
+          type="text"
+          id="input-student-name"
+          class="student-name-input"
+          maxlength="60"
+          placeholder="Tulis nama kamu di sini..."
+          autocomplete="off"
+        />
+        <div id="name-error-text" style="color:#f87171; font-size:12px; font-weight:700; margin-top:6px; min-height:16px;"></div>
+      </div>
+
+      <button class="btn-start-adventure" id="btn-start-game">
+        MULA PENGEMBARAAN 🚀
+      </button>
+      <!-- Panduan Kawalan Permainan (PC & Telefon/Tablet) -->
+      <div class="intro-controls-guide">
+        <div class="guide-header">
+          <span class="guide-header-icon">🎮</span>
+          <span class="guide-header-title">PANDUAN CARA MENGAWAL</span>
+        </div>
+        <div class="guide-grid">
+          <!-- Panduan PC / Laptop -->
+          <div class="guide-column guide-pc">
+            <div class="guide-device-tag">
+              <span class="device-icon">💻</span>
+              <span class="device-name">KOMPUTER / LAPTOP (PC)</span>
+            </div>
+            <ul class="guide-list">
+              <li>
+                <span class="guide-action-label">🚶 Bergerak:</span>
+                <span class="guide-key-row">
+                  <span class="guide-kbd">W</span>
+                  <span class="guide-kbd">A</span>
+                  <span class="guide-kbd">S</span>
+                  <span class="guide-kbd">D</span>
+                  <span class="guide-sep">atau</span>
+                  <span class="guide-kbd">▲</span>
+                  <span class="guide-kbd">▼</span>
+                  <span class="guide-kbd">◀</span>
+                  <span class="guide-kbd">▶</span>
+                </span>
+              </li>
+              <li>
+                <span class="guide-action-label">💬 Bercakap / Periksa:</span>
+                <span class="guide-key-row">
+                  <span class="guide-kbd guide-kbd-gold">E</span>
+                  <span class="guide-sep">atau</span>
+                  <span class="guide-kbd">Space</span>
+                </span>
+              </li>
+              <li>
+                <span class="guide-action-label">⏩ Teruskan Dialog:</span>
+                <span class="guide-key-row">
+                  <span class="guide-kbd">Enter</span>
+                  <span class="guide-sep">/</span>
+                  <span class="guide-hint-text">Klik Kotak Dialog</span>
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Panduan Telefon / Tablet (Handphone) -->
+          <div class="guide-column guide-mobile">
+            <div class="guide-device-tag guide-device-tag-mobile">
+              <span class="device-icon">📱</span>
+              <span class="device-name">TELEFON / TABLET</span>
+            </div>
+            <ul class="guide-list">
+              <li>
+                <span class="guide-action-label">🔄 Skrin:</span>
+                <span class="guide-badge-landscape">Wajib Melintang (Landscape)</span>
+              </li>
+              <li>
+                <span class="guide-action-label">🚶 Bergerak:</span>
+                <span class="guide-hint-text">Tekan butang <span class="guide-kbd">▲</span><span class="guide-kbd">▼</span><span class="guide-kbd">◀</span><span class="guide-kbd">▶</span> di <b>skrin kiri</b></span>
+              </li>
+              <li>
+                <span class="guide-action-label">💬 Bercakap / Periksa:</span>
+                <span class="guide-hint-text">Tekan butang bulat <span class="guide-kbd guide-kbd-gold guide-kbd-round">E</span> di <b>skrin kanan</b></span>
+              </li>
+              <li>
+                <span class="guide-action-label">⏩ Teruskan Dialog:</span>
+                <span class="guide-hint-text">Sentuh (Tap) mana-mana kotak dialog</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kotak Dialog (Dialogue Overlay) -->
+  <div id="vn-modal">
+    <div class="vn-container">
+      <!-- Kotak Dialog Bertaip -->
+      <div class="vn-dialog-box" id="vn-dialog-box">
+        <div class="vn-nameplate">
+          <span id="vn-speaker-name">Ustaz Alif</span>
+          <span class="vn-nameplate-title" id="vn-speaker-title">Guru Bahasa Arab</span>
+        </div>
+        <div class="vn-text-body" id="vn-dialog-text"><span class="vn-text-visible" id="vn-text-visible"></span><span class="vn-text-ghost" id="vn-text-ghost"></span></div>
+        <div class="vn-dialog-footer">
+          <div class="vn-action-buttons" id="vn-action-buttons" style="display:none;"></div>
+          <div class="vn-continue-hint" id="vn-continue-hint">
+            Tekan [E / Enter] atau Sentuh untuk teruskan ▼
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pembelajaran: Pelajaran A (Ustaz Alif) & Pelajaran B (Hana) -->
+  <div class="quest-modal-overlay" id="learning-modal">
+    <div class="quest-card">
+      <div class="quest-header">
+        <div class="quest-header-title" id="learning-modal-title">📖 Pelajaran A: Kenali Angka Arab (1–10)</div>
+        <div class="quest-step-pill" id="learning-step-pill">Kad 1 / 10</div>
+      </div>
+
+      <div class="learning-card-display" id="learning-card-display">
+        <!-- Kandungan kad disuntik secara dinamik oleh JavaScript -->
+      </div>
+
+      <div class="learning-nav-bar">
+        <button class="btn-learn-nav" id="btn-learn-prev">◀ SEBELUM</button>
+        <button class="btn-learn-nav" id="btn-learn-review">🔄 ULANG KAJI</button>
+        <button class="btn-learn-nav" id="btn-learn-next">SETERUSNYA ▶ <span style="font-size:10.5px; color:#fde68a; font-weight:800; background:rgba(0,0,0,0.3); padding:2px 6px; border-radius:4px; margin-left:4px;">[Enter/E]</span></button>
+        <button class="btn-learn-nav finish" id="btn-learn-finish" style="display:none;">SELESAI PELAJARAN ✓ <span style="font-size:10.5px; color:#fde68a; font-weight:800; background:rgba(0,0,0,0.3); padding:2px 6px; border-radius:4px; margin-left:4px;">[Enter/E]</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Kuiz Universal (Mini Kuiz Ustaz, Side Quest Kantin, Side Quest Padang, Ujian Akhir) -->
+  <div class="quest-modal-overlay" id="quiz-modal">
+    <div class="quest-card" id="quiz-main-card">
+      <div class="quest-header">
+        <div class="quest-header-title" id="quiz-modal-title">🥟 Kuiz Kantin: Pesanan Makanan</div>
+        <div class="quest-step-pill" id="quiz-step-pill">Soalan 1 / 5</div>
+      </div>
+
+      <div class="badge-quest-tag" id="quiz-badge-tag" style="display:none;">
+        <span id="quiz-badge-icon">🏅</span> <span id="quiz-badge-label">Lencana Pembantu Kantin</span>
+      </div>
+
+      <div class="quiz-question-box" id="quiz-question-box">Soalan kuiz di sini...</div>
+      <div class="quiz-items-grid" id="quiz-items-grid" style="display:none;"></div>
+      <div class="quiz-options-grid" id="quiz-options-grid"></div>
+      <div class="quiz-nav-hint" id="quiz-nav-hint">
+        ⌨️ Pilih jawapan: <kbd>A</kbd> <kbd>D</kbd> atau <kbd>◀</kbd> <kbd>▶</kbd> &nbsp;•&nbsp; Sahkan: <kbd class="kbd-gold">Enter / E</kbd>
+      </div>
+      <div class="quiz-feedback-box" id="quiz-feedback-box"></div>
+      <button class="quest-footer-btn" id="quiz-footer-btn" style="display:none;">Soalan Seterusnya →</button>
+    </div>
+  </div>
+
+  <!-- Popup Banner: SEMUA MISI SELESAI! -->
+  <div class="quest-modal-overlay" id="mission-complete-modal">
+    <div class="mission-complete-card">
+      <div class="mission-complete-icon">🎉</div>
+      <h2 class="mission-complete-title">SEMUA MISI SELESAI!</h2>
+      <p class="mission-complete-text">
+        Tahniah! Kamu telah berjaya menyelesaikan kedua-dua Side Quest di Kantin dan Padang!
+      </p>
+
+      <div class="badges-awarded-container">
+        <div class="badge-item-awarded">
+          <div class="badge-icon-circ">🥟</div>
+          <div class="badge-name">PEMBANTU KANTIN</div>
+          <div class="badge-sub">Misi Mengira Makanan Selesai!</div>
+        </div>
+        <div class="badge-item-awarded">
+          <div class="badge-icon-circ">⚽</div>
+          <div class="badge-name">WIRA PADANG</div>
+          <div class="badge-sub">Misi Peralatan Sukan Selesai!</div>
+        </div>
+      </div>
+
+      <p style="font-size:14px; color:#fef08a; font-weight:800; margin-bottom:18px;">
+        Sila kembali ke Kelas 1 Gamma untuk menduduki UJIAN AKHIR BAHASA ARAB bersama Ustaz Alif!
+      </p>
+
+      <button class="btn-return-class" id="btn-return-class">
+        🏫 KEMBALI KE KELAS 1 GAMMA SEKARANG ➔
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Tamat Permainan (Skrin Tahniah Penuh & Grand Victory) -->
+  <div class="quest-modal-overlay" id="victory-modal">
+    <div class="victory-card">
+      <div class="victory-badge-large">🏆</div>
+      <div class="badge-tag-label">LENCANA PELAJAR CEMERLANG</div>
+      <h1 class="victory-title" id="victory-student-title">TAHNIAH, AMIR!</h1>
+      <h2 class="victory-subtitle">ANDA TELAH MENAMATKAN MISI NOMBOR ARAB!</h2>
+
+      <!-- Pratonton Chibi Sprite Pemain -->
+      <div style="display:flex; justify-content:center; margin-bottom:12px;">
+        <canvas id="victory-player-sprite" width="48" height="48" style="image-rendering:pixelated; width:64px; height:64px;"></canvas>
+      </div>
+
+      <p id="victory-encourage-msg" style="font-size:15px; font-weight:700; line-height:1.5; color:#fef08a; margin-bottom:14px; text-shadow:0 1px 4px rgba(0,0,0,0.6);">
+        Kamu telah membuktikan kehebatan menguasai angka Arab dan perkataan nombor 1 hingga 10!
+      </p>
+
+      <!-- Grid Lencana Yang Diraih -->
+      <div class="victory-badges-row">
+        <div class="v-badge-pill">🥟 PEMBANTU KANTIN</div>
+        <div class="v-badge-pill">⚽ WIRA PADANG</div>
+        <div class="v-badge-pill gold">🏅 PELAJAR CEMERLANG</div>
+      </div>
+
+      <div class="victory-summary-table">
+        <div class="v-row">
+          <span>Nama Murid:</span>
+          <span id="v-table-name" style="font-weight:900; color:#fef08a;">-</span>
+        </div>
+        <div class="v-row">
+          <span>Karakter:</span>
+          <span id="v-table-gender" class="v-pill">-</span>
+        </div>
+        <div class="v-row">
+          <span>Kelas:</span>
+          <span>1 Gamma</span>
+        </div>
+        <div class="v-row">
+          <span>Markah Kuiz Kantin:</span>
+          <span id="v-table-canteen" class="v-pill">- / 5</span>
+        </div>
+        <div class="v-row">
+          <span>Markah Kuiz Padang:</span>
+          <span id="v-table-field" class="v-pill">- / 5</span>
+        </div>
+        <div class="v-row total-row">
+          <span>Markah Ujian Akhir Ustaz:</span>
+          <span id="v-table-exam" class="v-pill total">- / 10 ⭐</span>
+        </div>
+        <div class="v-row">
+          <span>Status Permainan:</span>
+          <span style="color:#34d399; font-weight:900;">TAMAT & SELESAI ✓</span>
+        </div>
+      </div>
+
+      <div style="font-size:12px; color:#a7f3d0; margin-bottom:16px;" id="victory-sync-text">
+        💾 Keputusan disimpan pada peranti ini.
+      </div>
+
+      <div class="victory-actions-grid">
+        <button class="btn-vic primary" id="btn-vic-exit-to-menu" style="width:100%; font-size:16px; font-weight:900; padding:15px; background:linear-gradient(135deg, #059669, #10b981); border:2.5px solid #6ee7b7; border-radius:14px; box-shadow:0 6px 20px rgba(16,185,129,0.45); cursor:pointer;">
+          🚪 TAMATKAN PERMAINAN & KEMBALI KE MENU UTAMA
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skrip Modul Utama Permainan (Three.js 2.5D HD-2D) -->
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
