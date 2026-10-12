@@ -18,7 +18,7 @@ export const GAME_CONFIG = {
   // URL Web App Google Apps Script
   // Guru perlu menampal URL Web App (berakhir dengan /exec) di sini selepas deployment.
   // Jika dibiarkan kosong, permainan tetap berfungsi sepenuhnya dalam mod tempatan (offline / LocalStorage).
-  appsScriptUrl: "",
+  appsScriptUrl: "https://script.google.com/macros/s/AKfycbzxwW3BoHkDUIFTM5z3AcMSjMROnzoRXHJ56kuRC224wd8GMvELScecXLZ1NpsSebPh/exec",
 
   // Kunci penyimpanan LocalStorage
   storageKeys: {
